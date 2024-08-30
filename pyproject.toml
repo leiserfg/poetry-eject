@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "poetry-eject"
+version = "0.1.0"
+description = "Helper for migrating out of poetry"
+authors = ["leiserfg <leiserfg@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "<4.0,>=3.8"
+poetry = "^1.8.3"
+requests = { version = "^2.13.0", source = "private" }
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.plugins."poetry.application.plugin"]
+eject = "poetry_eject.plugins:EjectPlugin"
+
+
+[[tool.poetry.source]]
+name = "private"
+url = "http://example.com/simple"
