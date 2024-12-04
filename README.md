@@ -6,11 +6,11 @@ How to use it:
 
 To check what will be the outcome
 ```sh
-uvx --with=https://github.com/leiserfg/poetry-uvify poetry uvify
+uvx --with=git+https://github.com/leiserfg/poetry-uvify poetry uvify
 ```
 
 To really apply it.
 
 ```sh
-uvx --with=https://github.com/leiserfg/poetry-uvify poetry uvify -r
+uvx --with=git+https://github.com/leiserfg/poetry-uvify poetry uvify -r
 ```
