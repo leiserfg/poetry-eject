@@ -92,7 +92,7 @@ class Uvifyer:
 
         if uv_tool:
             toml["tool"]["uv"] = uv_tool
-            return toml
+        return toml
 
 
 class UvifyCommand(Command):
