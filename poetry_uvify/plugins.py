@@ -1,6 +1,7 @@
-from collections.abc import Iterable
+from copy import deepcopy
 from poetry.console.commands.command import Command
 from poetry.plugins.application_plugin import ApplicationPlugin
+from cleo.helpers import option
 
 MAIN_GROUP = "main"
 
@@ -11,17 +12,20 @@ class Uvifyer:
         self.pkg = poetry.package
         self.package_sources = {}
 
-    def _dep_groups(self) -> dict[str, Iterable[str]]:
-        return {
+    def _dep_groups(self) -> dict[str, list[str]]:
+        groups = {
             group_name: self._get_pep508_deps(group_name)
             for group_name in self.poetry.package.dependency_group_names()
         }
+        return groups
 
-    def _get_pep508_deps(self, group_name) -> Iterable[str]:
+    def _get_pep508_deps(self, group_name) -> list[str]:
+        deps = []
         for dep in self.poetry.package.dependency_group(group_name).dependencies:
             if dep.source_name:
                 self.package_sources[dep.name] = dep.source_name
-            yield dep.base_pep_508_name_resolved
+            deps.append(dep.base_pep_508_name_resolved)
+        return deps
 
     def _parse_person_entry(self, entry) -> dict[str, str]:
         """
@@ -56,37 +60,54 @@ class Uvifyer:
             ]
 
         if groups:
-            project["optional-dependencies"] = list(groups)
+            project["optional-dependencies"] = groups
 
         if scripts := self.poetry.local_config.get("scripts"):
             project["scripts"] = scripts
 
         return project
 
-    def build_system_fragment(self):
-        return {"requires": ["hatchling"], "build-backend": "hatchling.build"}
+    def index_fragment(self):
+        indexes = deepcopy(self.poetry.local_config.get("source", []))
+        for idx in indexes:
+            idx.pop("priority", None)
 
-    def eject(self, apply=False):
+        return indexes
+
+    def eject(self):
         toml = self.poetry.pyproject.data
         toml["tool"].pop("poetry")
-        toml.pop(
-            "build-system"
-        )  # We dump this 'cause it looks better after the project block IMHO
+        toml.pop("build-system")
 
         toml["project"] = self.project_fragment()
-        toml["build-system"] = self.build_system_fragment()
 
-        # TODO Add self.package_sources once it's clear how to use them in uv
+        uv_tool = {}
+        if indexes := self.index_fragment():
+            uv_tool["index"] = indexes
 
-        return toml.as_string()
+        if self.package_sources:
+            uv_tool["sources"] = {
+                k: {"index": v} for k, v in self.package_sources.items()
+            }
+
+        if uv_tool:
+            toml["tool"]["uv"] = uv_tool
+            return toml
 
 
 class UvifyCommand(Command):
     name = "uvify"
+    options = [option("rewrite", "r", "Rewrite pyproject.toml", flag=True)]
 
     def handle(self) -> int:
         uvifyer = Uvifyer(self.poetry)
-        self.write(uvifyer.eject())
+        toml = uvifyer.eject()
+
+        if self.option("rewrite"):
+            self.poetry.pyproject.file.write(toml)
+        else:
+            self.write(toml.as_string())
+
         return 0
 
 
