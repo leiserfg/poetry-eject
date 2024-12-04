@@ -1,12 +1,11 @@
 from collections.abc import Iterable
 from poetry.console.commands.command import Command
 from poetry.plugins.application_plugin import ApplicationPlugin
-from difflib import Differ
 
 MAIN_GROUP = "main"
 
 
-class Ejector:
+class Uvifyer:
     def __init__(self, poetry):
         self.poetry = poetry
         self.pkg = poetry.package
@@ -42,10 +41,12 @@ class Ejector:
             "name": self.pkg.name,
             "version": self.pkg.version.text,
             "description": self.pkg.description,
-            "readme": str(self.pkg.readme.relative_to(self.pkg.root_dir)),
             "requires-python": str(self.pkg.python_constraint),
             "dependencies": list(main_group),
         }
+        if self.pkg.readme:
+            project["readme"] = str(self.pkg.readme.relative_to(self.pkg.root_dir))
+
         if self.pkg.authors:
             project["authors"] = [self._parse_person_entry(p) for p in self.pkg.authors]
 
@@ -68,26 +69,28 @@ class Ejector:
     def eject(self, apply=False):
         toml = self.poetry.pyproject.data
         toml["tool"].pop("poetry")
-        toml.pop("build-system") # We dump this 'cause it looks better after the project block IMHO
+        toml.pop(
+            "build-system"
+        )  # We dump this 'cause it looks better after the project block IMHO
 
         toml["project"] = self.project_fragment()
         toml["build-system"] = self.build_system_fragment()
 
-        #TODO Add self.package_sources once it's clear how to use them in uv
+        # TODO Add self.package_sources once it's clear how to use them in uv
 
         return toml.as_string()
 
 
-class EjectCommand(Command):
-    name = "eject"
+class UvifyCommand(Command):
+    name = "uvify"
 
     def handle(self) -> int:
-        ejector = Ejector(self.poetry)
-        self.write(ejector.eject())
+        uvifyer = Uvifyer(self.poetry)
+        self.write(uvifyer.eject())
         return 0
 
 
-class EjectPlugin(ApplicationPlugin):
+class UvifyPlugin(ApplicationPlugin):
     @property
     def commands(self) -> list[type[Command]]:
-        return [EjectCommand]
+        return [UvifyCommand]
