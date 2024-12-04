@@ -52,9 +52,7 @@
   # https://devenv.sh/pre-commit-hooks/
   git-hooks.hooks = {
     ruff.enable = true;
-    ruff.excludes = ["settings"];
     ruff-format.enable = true;
-    terraform-format.enable = true;
   };
 
   # See full reference at https://devenv.sh/reference/options/
