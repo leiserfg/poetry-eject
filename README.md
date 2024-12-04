@@ -1,5 +1,7 @@
 This is my last poetry project, and I hope it's also yours :smile:
 
+It transforms a pyproject.toml from `poetry` to `uv`
+
 How to use it:
 
 To check what will be the outcome
