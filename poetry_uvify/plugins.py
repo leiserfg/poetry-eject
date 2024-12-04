@@ -72,7 +72,9 @@ class Uvifyer:
         for idx in indexes:
             idx.pop("priority", None)
 
-        return indexes
+        return [
+            idx for idx in indexes if idx.get("url", None)
+        ]  # Avoid indexes without url
 
     def eject(self):
         toml = self.poetry.pyproject.data
